@@ -1,0 +1,20 @@
+---
+# Source: mushop/charts/orders/templates/orders-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mushop-orders
+  labels:
+    app.kubernetes.io/name: orders
+    helm.sh/chart: orders-0.1.0
+    app.kubernetes.io/instance: mushop
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    app.kubernetes.io/name: orders
+    app.kubernetes.io/instance: mushop
+  ports:
+    - port: 80
+      name: http
+      targetPort: 80

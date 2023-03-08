@@ -1,0 +1,42 @@
+---
+# Source: mushop/charts/orders/templates/oadb-init-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mushop-orders-init
+  labels: 
+    app.kubernetes.io/name: orders
+    helm.sh/chart: orders-0.1.0
+    app.kubernetes.io/instance: mushop
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+data:
+  atp.init.sql: "-- Copyright (c) 2019, 2021 Oracle and/or its affiliates. All rights
+    reserved.\n-- Licensed under the Universal Permissive License v 1.0 as shown at
+    http://oss.oracle.com/licenses/upl.\n\nSET SERVEROUTPUT ON;\nSET VERIFY OFF;\nBEGIN\n\t--
+    Profile Creation\n\tDECLARE\n\t\tprofileExists INTEGER;\n\tBEGIN\n\t\tSELECT COUNT(*)
+    \n\t\tINTO profileExists \n\t\tFROM DBA_PROFILES \n\t\tWHERE PROFILE = 'MUSHOP_SERVICES';\n\t\tDBMS_OUTPUT.PUT_LINE
+    ('** Profile creationg steps - &_DATE');\n\t\tIF profileExists = 0 THEN\n\t\t\tDBMS_OUTPUT.PUT_LINE
+    ('Creating Profile = MUSHOP_SERVICES ...');\n\t\t\tEXECUTE IMMEDIATE\n\t\t\t\t'CREATE
+    PROFILE MUSHOP_SERVICES\n\t\t\t\t\tLIMIT\tPASSWORD_LIFE_TIME UNLIMITED\n\t\t\t\t\t\t\tPASSWORD_GRACE_TIME
+    0\n\t\t\t\t\t\t\tPASSWORD_REUSE_TIME UNLIMITED\n\t\t\t\t\t\t\tPASSWORD_REUSE_MAX
+    UNLIMITED\n\t\t\t\t\t\t\tFAILED_LOGIN_ATTEMPTS UNLIMITED\n\t\t\t\t\t\t\tPASSWORD_LOCK_TIME
+    UNLIMITED\n\t\t\t\t\t\t\tINACTIVE_ACCOUNT_TIME UNLIMITED';\n\t\tELSE\n\t\t\tDBMS_OUTPUT.PUT_LINE
+    ('Profile = MUSHOP_SERVICES exists, steps ignored');\n\t\tEND IF;\n\tEXCEPTION\n\t\tWHEN
+    OTHERS THEN\n\t\t\tDBMS_OUTPUT.PUT_LINE ('Profile creation step ignored');\n\tEND;\n\n\t--
+    Schema User Creation\n\tDECLARE\n\t\tschemaUserExists INTEGER;\n\tBEGIN\n\t\tSELECT
+    COUNT(*) \n\t\tINTO schemaUserExists \n\t\tFROM ALL_USERS \n\t\tWHERE username =
+    '&1';\n\t\tDBMS_OUTPUT.PUT_LINE ('** Schema creationg steps - &_DATE');\n\t\tIF
+    schemaUserExists = 0 THEN\n\t\t\tDBMS_OUTPUT.PUT_LINE ('Creating schema = &1 ...');\n\t\t\tEXECUTE
+    IMMEDIATE 'CREATE USER &1 IDENTIFIED BY &2 PROFILE mushop_services';\n\t\t\tEXECUTE
+    IMMEDIATE 'GRANT CREATE SESSION TO &1';\n\t\t\tEXECUTE IMMEDIATE 'GRANT UNLIMITED
+    TABLESPACE TO &1';\n\t\tELSE\n\t\t\tDBMS_OUTPUT.PUT_LINE ('Schema User = &1 exists,
+    steps ignored');\n\t\tEND IF;\n\tEND;\n\n\t-- Role Creation\n\tDECLARE\n\t\troleExists
+    INTEGER;\n\t\troleName VARCHAR2 (100);\n\tBEGIN\n\t\troleName := '&1' || '_ROLE';\n\t\tSELECT
+    COUNT(*) \n\t\tINTO roleExists \n\t\tFROM DBA_ROLES \n\t\tWHERE role = roleName;\n\t\tDBMS_OUTPUT.PUT_LINE
+    ('** Role creationg steps - &_DATE');\n\t\tIF roleExists = 0 THEN\n\t\t\tDBMS_OUTPUT.PUT_LINE
+    ('Creating Role ' || roleName || '...' );\n\t\t\tEXECUTE IMMEDIATE 'CREATE ROLE
+    ' || roleName;\n\t\t\tEXECUTE IMMEDIATE 'GRANT ' || roleName || ' TO &1';\n\t\t\tEXECUTE
+    IMMEDIATE 'GRANT CREATE TABLE, CREATE VIEW, CREATE PROCEDURE, CREATE SEQUENCE TO
+    ' || roleName;\n\t\tELSE\n\t\t\tDBMS_OUTPUT.PUT_LINE ('Role '|| roleName ||' exists,
+    steps ignored');\n\t\tEND IF;\n\tEND;\nEND;\n/\n\nquit;\n/"

@@ -1,0 +1,20 @@
+---
+# Source: mushop/charts/assets/templates/assets-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mushop-assets
+  labels:
+    app.kubernetes.io/name: assets
+    helm.sh/chart: assets-0.1.0
+    app.kubernetes.io/instance: mushop
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    app.kubernetes.io/name: assets
+    app.kubernetes.io/instance: mushop
+  ports:
+    - port: 80
+      name: http
+      targetPort: 3000

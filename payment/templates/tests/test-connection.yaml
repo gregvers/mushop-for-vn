@@ -1,0 +1,21 @@
+---
+# Source: mushop/charts/payment/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "mushop-payment-test-connection"
+  labels:
+    app.kubernetes.io/name: payment
+    helm.sh/chart: payment-0.1.0
+    app.kubernetes.io/instance: mushop
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args:  ['mushop-payment:80']
+  restartPolicy: Never

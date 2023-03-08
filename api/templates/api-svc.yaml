@@ -1,0 +1,20 @@
+---
+# Source: mushop/charts/api/templates/api-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mushop-api
+  labels:
+    app.kubernetes.io/name: api
+    helm.sh/chart: api-0.1.0
+    app.kubernetes.io/instance: mushop
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    app.kubernetes.io/name: api
+    app.kubernetes.io/instance: mushop
+  ports:
+    - port: 80
+      name: http
+      targetPort: 3000

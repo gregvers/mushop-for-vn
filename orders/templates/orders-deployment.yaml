@@ -1,0 +1,110 @@
+---
+# Source: mushop/charts/orders/templates/orders-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mushop-orders
+  labels: 
+    app.kubernetes.io/name: orders
+    helm.sh/chart: orders-0.1.0
+    app.kubernetes.io/instance: mushop
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orders
+      app.kubernetes.io/name: orders
+      app.kubernetes.io/instance: mushop
+  template:
+    metadata:
+      labels:
+        app: orders
+        version: "2.2.2"
+        app.kubernetes.io/name: orders
+        app.kubernetes.io/instance: mushop
+        mockmode: "all"
+      annotations:
+        sidecar.istio.io/rewriteAppHTTPProbers: "true"
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /actuator/prometheus
+        prometheus.io/port: "80"
+    spec:
+      #initContainers:
+        
+      containers:
+        - name: orders
+          image: "iad.ocir.io/oracle/ateam/mushop-orders:2.2.2"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+          livenessProbe:
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 5
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+          readinessProbe:
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+
+          env:
+            - name: ZIPKIN
+              value: zipkin.jaeger.svc.cluster.local
+            - name: JAVA_OPTS
+              value: -Xms32m -Xmx150m -XX:MaxRAM=150m -Djava.security.egd=file:/dev/urandom -Doracle.jdbc.fanEnabled=false -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -Dlogging.level.mushop.orders=INFO -Dspring.zipkin.enabled=false
+            - name: NATS_HOST
+              value: "mushop-nats"
+            - name: NATS_PORT
+              value: "4222"
+            - name: ORDERS_NEW
+              value: "mushop-orders"
+            - name: ORDERS_SHIPPED
+              value: "mushop-shipments"
+            - name: OADB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: orders-oadb-credentials
+                  key: oadb_user
+            - name: OADB_PW
+              valueFrom:
+                secretKeyRef:
+                  name: orders-oadb-credentials
+                  key: oadb_pw
+            - name: OADB_SERVICE
+              valueFrom:
+                secretKeyRef:
+                  name: orders-oadb-connection
+                  key: oadb_service
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp-volume
+            # for init container
+            - name: wallet
+              mountPath: /wallet/
+              readOnly: true
+      volumes:
+        - name: tmp-volume
+          emptyDir:
+            medium: Memory
+        
+        # local wallet
+        - name: wallet
+          secret:
+            secretName: orders-oadb-wallet
+            #defaultMode: 256
+        # service init configMap
+        - name: initdb
+          configMap:
+            name: mushop-orders-init
+            items:
+            - key: atp.init.sql
+              path: service.sql
+      nodeSelector:
+          kubernetes.io/os: linux

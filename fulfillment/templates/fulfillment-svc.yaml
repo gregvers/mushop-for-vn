@@ -1,0 +1,23 @@
+---
+# Source: mushop/charts/fulfillment/templates/fulfillment-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: fulfillment
+  labels: 
+    app.kubernetes.io/name: fulfillment
+    helm.sh/chart: fulfillment-0.1.0
+    app.kubernetes.io/instance: mushop
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    run: fulfillment
+spec:
+  selector:
+    app.kubernetes.io/name: fulfillment
+    app.kubernetes.io/instance: mushop
+    run: fulfillment
+  ports:
+    - port: 80
+      name: http
+      protocol: TCP
+      targetPort: 80

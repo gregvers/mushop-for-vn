@@ -1,0 +1,47 @@
+---
+# Source: mushop/charts/session/templates/session-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mushop-session
+  labels:
+    app.kubernetes.io/name: session
+    helm.sh/chart: session-0.1.0
+    app.kubernetes.io/instance: mushop
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: session
+      app.kubernetes.io/name: session
+      app.kubernetes.io/instance: mushop
+  template:
+    metadata:
+      labels:
+        app: session
+        version: "alpine"
+        app.kubernetes.io/name: session
+        app.kubernetes.io/instance: mushop
+      annotations:
+        sidecar.istio.io/rewriteAppHTTPProbers: "true"
+    spec:
+      containers:
+        - name: session
+          image: "redis:alpine"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: redis
+              containerPort: 6379
+          #securityContext:
+          #  capabilities:
+          #    add:
+          #    - CHOWN
+          #    - SETGID
+          #    - SETUID
+          #    drop:
+          #    - all
+          #  readOnlyRootFilesystem: true
+      nodeSelector:
+        kubernetes.io/os: linux

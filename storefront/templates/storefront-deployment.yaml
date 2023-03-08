@@ -1,0 +1,83 @@
+---
+# Source: mushop/charts/storefront/templates/storefront-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mushop-storefront
+  labels:
+    app.kubernetes.io/name: storefront
+    helm.sh/chart: storefront-0.2.0
+    app.kubernetes.io/instance: mushop
+    app.kubernetes.io/version: "2.3.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: storefront
+      app.kubernetes.io/name: storefront
+      app.kubernetes.io/instance: mushop
+  template:
+    metadata:
+      labels:
+        app: storefront
+        version: "2.3"
+        app.kubernetes.io/name: storefront
+        app.kubernetes.io/instance: mushop
+      annotations:
+        sidecar.istio.io/rewriteAppHTTPProbers: "true"
+    spec:
+      containers:
+        - name: storefront
+          image: "iad.ocir.io/oracle/ateam/mushop-storefront:2.3"
+          imagePullPolicy: Always
+          ports:
+            - name: http-alt
+              containerPort: 8080
+            - name: status
+              containerPort: 8888
+          env:
+          - name: ODA_ENABLED
+            value: "false"
+          - name: ODA_URI
+            value: 
+          - name: ODA_CHANNEL_ID
+            value: 
+          - name: ODA_SECRET
+            value: 
+          - name: ODA_USER_INIT_MESSAGE
+            value: 
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http-alt
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http-alt
+          volumeMounts:
+          - mountPath: /tmp
+            name: tmp-volume
+          resources:
+            limits:
+              cpu: 300m
+              memory: 300Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          #securityContext:
+          #  capabilities:
+          #    add:
+          #    - NET_BIND_SERVICE
+          #    - CHOWN
+          #    - SETGID
+          #    - SETUID
+          #    drop:
+          #    - all
+          #  runAsNonRoot: true
+          #  runAsUser: 101
+          #  readOnlyRootFilesystem: true
+      volumes:
+        - name: tmp-volume
+          emptyDir:
+            medium: Memory

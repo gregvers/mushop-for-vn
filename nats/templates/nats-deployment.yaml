@@ -1,0 +1,64 @@
+---
+# Source: mushop/charts/nats/templates/nats-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mushop-nats
+  labels:
+    app.kubernetes.io/name: nats
+    helm.sh/chart: nats-0.1.0
+    app.kubernetes.io/instance: mushop
+    run: nats
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nats
+      app.kubernetes.io/name: nats
+      app.kubernetes.io/instance: mushop
+      run: nats
+  template:
+    metadata:
+      labels:
+        app: nats
+        version: "2.7.1"
+        app.kubernetes.io/name: nats
+        app.kubernetes.io/instance: mushop
+        run: nats
+      annotations:
+        sidecar.istio.io/rewriteAppHTTPProbers: "true"
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "7777"
+    spec:
+      containers:
+        - name: nats
+          image: "nats:2.7.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: client
+              containerPort: 4222
+              protocol: TCP
+            - name: routes
+              containerPort: 6222
+              protocol: TCP
+            - name: monitoring
+              containerPort: 8222
+              protocol: TCP
+        - name: nats-exporter
+          image: "natsio/prometheus-nats-exporter:0.9.1"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 7777
+          args:
+            - -D 
+            - -varz 
+            - -channelz
+            - -connz
+            - -serverz
+            - -subz
+            - -gatewayz
+            - "http://localhost:8222"

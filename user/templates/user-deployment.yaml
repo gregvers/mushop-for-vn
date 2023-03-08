@@ -1,0 +1,101 @@
+---
+# Source: mushop/charts/user/templates/user-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mushop-user
+  labels: 
+    app.kubernetes.io/name: user
+    helm.sh/chart: user-0.1.0
+    app.kubernetes.io/instance: mushop
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user
+      app.kubernetes.io/name: user
+      app.kubernetes.io/instance: mushop
+  template:
+    metadata:
+      labels:
+        app: user
+        version: "1.1.0"
+        app.kubernetes.io/name: user
+        app.kubernetes.io/instance: mushop
+        mockmode: "all"
+      annotations:
+        sidecar.istio.io/rewriteAppHTTPProbers: "true"
+    spec:
+      initContainers:
+        
+      containers:
+        - name: user
+          image: "iad.ocir.io/oracle/ateam/mushop-user:1.1.0"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: OADB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: user-oadb-credentials
+                  key: oadb_user
+            - name: OADB_PW
+              valueFrom:
+                secretKeyRef:
+                  name: user-oadb-credentials
+                  key: oadb_pw
+            - name: OADB_SERVICE
+              valueFrom:
+                secretKeyRef:
+                  name: user-oadb-connection
+                  key: oadb_service
+          volumeMounts:
+            - name: wallet
+              mountPath: /usr/lib/oracle/19.3/client64/lib/network/admin/
+              readOnly: true
+          resources:
+            limits:
+              cpu: 300m
+              memory: 300Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          #securityContext:
+          #  capabilities:
+          #    add:
+          #    - NET_BIND_SERVICE
+          #    drop:
+          #    - all
+          #  readOnlyRootFilesystem: true
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      volumes:
+        
+        # local wallet
+        - name: wallet
+          secret:
+            secretName: user-oadb-wallet
+            #defaultMode: 256
+        # service init configMap
+        - name: initdb
+          configMap:
+            name: mushop-user-init
+            items:
+            - key: atp.init.sql
+              path: service.sql
+      nodeSelector:
+        kubernetes.io/os: linux

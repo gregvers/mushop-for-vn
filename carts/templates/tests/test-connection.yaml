@@ -1,0 +1,21 @@
+---
+# Source: mushop/charts/carts/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "mushop-carts-test-connection"
+  labels:
+    app.kubernetes.io/name: carts
+    helm.sh/chart: carts-0.1.0
+    app.kubernetes.io/instance: mushop
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args:  ['mushop-carts:80']
+  restartPolicy: Never
